@@ -28,7 +28,7 @@ public class SudokuTestHarness {
         grid.printGrid();
 
         SudokuSolver solver = new SudokuSolver(grid);
-        solver.printHeuristics();
+        //solver.printHeuristics();
 
         solver.solve();
     }
