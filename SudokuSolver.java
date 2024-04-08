@@ -7,6 +7,9 @@ public class SudokuSolver {
     private final HashMap<Point, LinkedList<SudokuCellConstraint>> constraints;
     private final TreeSet<AbstractMap.SimpleEntry<Point, Integer>> heuristics;
     private final Stack<SudokuMove> solution;
+    private int forwardMoves = 0;
+    private int backwardMoves = 0;
+    private int lateralMoves = 0;
 
     static class SudokuHeuristicCompare implements Comparator<AbstractMap.SimpleEntry<Point,Integer>> {
 
@@ -78,9 +81,7 @@ public class SudokuSolver {
         }
 
         // Initialize the heuristics table
-        for(int i = 1; i <= SudokuGrid.GRID_LENGTH; i++)
-            for (int j = 1; j <= SudokuGrid.GRID_LENGTH; j++)
-                updateCellHeuristic(new Point(i, j));
+        resetHeuristics();
     }
 
     public void solve()
@@ -88,25 +89,48 @@ public class SudokuSolver {
         while(true)
         {
             // Evaluate our most constrained cells and confirm we don't have a broken puzzle. By
-            // checking this, we are confirming that every open cell is not full constrained and
+            // checking this, we are confirming that every open cell is not fully constrained and
             // all have available moves
             if(! confirmHealthyHeuristics())
             {
                 // Go back up the tree until we get healthy
-                System.out.println("ERROR - Constraints are broken, go code this");
-                return;
+                //System.out.println("Constraints are broken, recursing the stack");
+
+                // Recurse until we can find a previous move with another option
+                while(solution.peek().peekAvailableValue() == null)
+                {
+                    // There are no other choices for the previous move.  We need to pop it
+                    // off the list and clear the puzzle cell while we look upstream for
+                    // another option
+                    SudokuMove dropMove = solution.pop();
+                    grid.setGridValue(dropMove.getPoint(), SudokuGrid.EMPTY_CELL);
+                    backwardMoves++;
+                    //System.out.println("Clearing cell " + dropMove.getPoint());
+                }
+
+                // If we got here, we finally peeked a move that has some other value options.  Take another
+                // choice for this cell and hope it goes better
+                SudokuMove modifyMove = solution.peek();
+                int nextValueChoice = modifyMove.popAvailableValue();
+                grid.setGridValue(modifyMove.getPoint(), nextValueChoice);
+                lateralMoves++;
+                //System.out.println("Modifying cell " + modifyMove.getPoint() + " to value "+ nextValueChoice);
+
+                resetHeuristics();
+                continue;
             }
 
             // We are healthy, so grab the most constrained cell from the list and continue solving
             AbstractMap.SimpleEntry<Point, Integer> constrainedCell = heuristics.pollFirst();
             if(constrainedCell == null)
             {
-                System.out.println("Sudoku solved in [" + solution.size() + "] moves");
+                System.out.println("Sudoku solution moves: forward[" + forwardMoves + "] backward[" + backwardMoves +
+                        "] lateral[" + lateralMoves + "]");
                 grid.printGrid();
                 return;
             }
 
-            System.out.println("Most constrained cell = " + constrainedCell);
+            //System.out.println("Most constrained cell = " + constrainedCell);
 
             // Create a move for this constrained cell based on the point and available values
             Point constrainedPoint = constrainedCell.getKey();
@@ -117,14 +141,11 @@ public class SudokuSolver {
             // Assign an available value from our move set and record the move
             grid.setGridValue(constrainedCell.getKey(), nextMove.popAvailableValue());
             solution.push(nextMove);
-            System.out.println("Next move = " + constrainedPoint + " value = " + grid.getGridValue(constrainedPoint));
+            forwardMoves++;
+            //System.out.println("Next move = " + constrainedPoint + " value = " + grid.getGridValue(constrainedPoint));
 
-            // Update all of the dirty heuristics in the subnode, column, row for the point we just changed
-            // SMJ NOTE - GO BACK AND OPTIMIZE THIS, THIS IS BRUTE FORCE AND SORT OF TERRIBLE
-            heuristics.clear();
-            for(int i = 1; i <= SudokuGrid.GRID_LENGTH; i++)
-                for (int j = 1; j <= SudokuGrid.GRID_LENGTH; j++)
-                    updateCellHeuristic(new Point(i, j));
+            // Update all the heuristics because our latest move made many cells invalid
+            resetHeuristics();
         }
     }
 
@@ -140,6 +161,14 @@ public class SudokuSolver {
         }
 
         return heuristicSet;
+    }
+
+    private void resetHeuristics()
+    {
+        heuristics.clear();
+        for(int i = 1; i <= SudokuGrid.GRID_LENGTH; i++)
+            for (int j = 1; j <= SudokuGrid.GRID_LENGTH; j++)
+                updateCellHeuristic(new Point(i, j));
     }
 
     private void updateCellHeuristic(Point aPoint)
@@ -176,19 +205,6 @@ public class SudokuSolver {
                 return true;    // The heuristics are sorted, so no reason to look through the whole list
         }
         return true;
-    }
-
-    private void updateConstraintHeuristics(Point aPoint)
-    {
-        HashSet<Point> dirtyCells = new HashSet<>();
-
-        Iterator<SudokuCellConstraint> iter = constraints.get(aPoint).iterator();
-        while(iter.hasNext())
-            dirtyCells.addAll(iter.next().getConstraintCells());
-
-        Iterator<Point> dIter = dirtyCells.iterator();
-        while(dIter.hasNext())
-            updateCellHeuristic(dIter.next());
     }
 
     public void printHeuristics()

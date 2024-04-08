@@ -14,6 +14,11 @@ public class SudokuMove {
 
     public Point getPoint() { return point; }
 
+    public Integer peekAvailableValue()
+    {
+        return availableValues.peek();
+    }
+
     public int popAvailableValue()
     {
         int out = SudokuGrid.EMPTY_CELL;

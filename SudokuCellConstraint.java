@@ -1,5 +1,4 @@
 import java.awt.*;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -18,26 +17,6 @@ public class SudokuCellConstraint {
     public void addCell(Point aPoint)
     {
         cells.add(aPoint);
-    }
-
-    public LinkedList<Point> getConstraintCells()
-    {
-        return new LinkedList<>(cells);
-    }
-
-    public LinkedList<Integer> getUnusedValues()
-    {
-        LinkedList<Integer> out = new LinkedList<>(Arrays.asList(SudokuGrid.SOLUTION_SET));
-
-        Iterator<Point> iter = cells.iterator();
-        while(iter.hasNext())
-        {
-            int cellValue = grid.getGridValue(iter.next());
-            if(cellValue != SudokuGrid.EMPTY_CELL)
-                out.remove(Integer.valueOf(cellValue));
-        }
-
-        return out;
     }
 
     public LinkedList<Integer> getUsedValues()
