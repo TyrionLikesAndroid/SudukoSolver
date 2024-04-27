@@ -77,6 +77,18 @@ public class SudokuTestHarness {
             { 5, 8, 8 }, { 8, 8, 4 },
             { 2, 9, 3 }, { 4, 9, 9 }, { 5, 9, 1 } };
 
+    // https://www.kristanix.com/sudokuepic/worlds-hardest-sudoku.php - VERY HARD (4/27/24)
+    private static final int[][] testSudoku_7 = {
+            { 1, 1, 1 }, { 6, 1, 7 }, { 8, 1, 9 },
+            { 2, 2, 3 }, { 5, 2, 2 }, { 9, 2, 8 },
+            { 3, 3, 9 }, { 4, 3, 6 }, { 7, 3, 5 },
+            { 3, 4, 5 }, { 4, 4, 3 }, { 7, 4, 9 },
+            { 2, 5, 1 }, { 5, 5, 8 }, { 9, 5, 2 },
+            { 1, 6, 6 }, { 6, 6, 4 },
+            { 1, 7, 3 }, { 8, 7, 1 },
+            { 2, 8, 4 }, { 9, 8, 7 },
+            { 3, 9, 7 }, { 7, 9, 3 } };
+
     public static void main(String[] args)
     {
         SudokuGrid grid = new SudokuGrid();
@@ -86,6 +98,7 @@ public class SudokuTestHarness {
             grid.setGridValue(new Point(testSudoku[i][0], testSudoku[i][1]), testSudoku[i][2]);
 
         grid.printGrid();
+        //grid.printValueSummary();
 
         SudokuSolver solver = new SudokuSolver(grid);
         //solver.printHeuristics();

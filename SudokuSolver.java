@@ -10,6 +10,7 @@ public class SudokuSolver {
     private int forwardMoves = 0;
     private int backwardMoves = 0;
     private int lateralMoves = 0;
+    private boolean useLeastConstrainedOption = true;
 
     static class SudokuHeuristicCompare implements Comparator<AbstractMap.SimpleEntry<Point,Integer>> {
 
@@ -111,8 +112,7 @@ public class SudokuSolver {
                 // If we got here, we finally peeked a move that has some other value options.  Take another
                 // choice for this cell and hope it goes better
                 SudokuMove modifyMove = solution.peek();
-                int nextValueChoice = modifyMove.popAvailableValue();
-                grid.setGridValue(modifyMove.getPoint(), nextValueChoice);
+                grid.setGridValue(modifyMove.getPoint(), chooseNextBestValue(modifyMove));
                 lateralMoves++;
                 //System.out.println("Modifying cell " + modifyMove.getPoint() + " to value "+ nextValueChoice);
 
@@ -125,7 +125,7 @@ public class SudokuSolver {
             if(constrainedCell == null)
             {
                 System.out.println("Sudoku solution moves: forward[" + forwardMoves + "] backward[" + backwardMoves +
-                        "] lateral[" + lateralMoves + "]");
+                        "] lateral[" + lateralMoves + "] total[" + (forwardMoves + backwardMoves + lateralMoves) + "]");
                 grid.printGrid();
                 return;
             }
@@ -139,7 +139,7 @@ public class SudokuSolver {
             nextMove.availableValues.addAll(available);
 
             // Assign an available value from our move set and record the move
-            grid.setGridValue(constrainedCell.getKey(), nextMove.popAvailableValue());
+            grid.setGridValue(constrainedCell.getKey(), chooseNextBestValue(nextMove));
             solution.push(nextMove);
             forwardMoves++;
             //System.out.println("Next move = " + constrainedPoint + " value = " + grid.getGridValue(constrainedPoint));
@@ -180,6 +180,28 @@ public class SudokuSolver {
             HashSet<Integer> heuristicSet = getUsedValues(aPoint);
             heuristics.add(new AbstractMap.SimpleEntry<>(aPoint, heuristicSet.size()));
         }
+    }
+
+    private int chooseNextBestValue(SudokuMove aMove)
+    {
+        // If we only have one option, just choose it and return
+        int out;
+        if (aMove.availableValues.size() == 1)
+            out = aMove.popAvailableValue();
+        else
+        {
+            // If we have multiple options, follow the leastConstrainedOption setting and choose based
+            // on how we have configured the algorithm.
+            if (useLeastConstrainedOption)
+            {
+                out = grid.getLeastConstrainedOption(aMove.availableValues);
+                aMove.availableValues.remove(Integer.valueOf(out));
+            }
+            else
+                out = aMove.popAvailableValue();
+        }
+
+        return out;
     }
 
     private HashSet<Integer> getAvailableValues(Point aPoint)
